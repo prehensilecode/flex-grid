@@ -5,6 +5,9 @@ use strict;
 use threads;    ## REMOVE FOR UNTHREADED PERL
 use Getopt::Std qw( getopts );
 use POSIX qw( );
+use Proc::Daemon;
+use Proc::PID::File;
+
 import License;
 import GridEngine;
 import Qconf;
