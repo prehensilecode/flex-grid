@@ -22,6 +22,7 @@
 # Source function library.
 . /etc/init.d/functions
 
+### FIXME modify these for your installation
 QLICDIR=/opt/flex-grid
 PATH=$PATH:/cm/shared/apps/flexlm/11.13/bin:/opt/flex-grid/site:/opt/flex-grid/scripts
 
