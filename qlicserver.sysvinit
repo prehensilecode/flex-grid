@@ -1,0 +1,104 @@
+#!/bin/bash
+#
+# qlicserver        This starts and stops qlicserver
+#
+# chkconfig: 345 11 88
+# description: This starts the Grid Engine FlexLM license integration server
+#
+# config: /opt/flex-grid/site/qlicserver.config
+# pidfile: /var/run/qlicserver.pid
+#
+# Return values according to LSB for all commands but status:
+# 0 - success
+# 1 - generic or unspecified error
+# 2 - invalid or excess argument(s)
+# 3 - unimplemented feature (e.g. "reload")
+# 4 - insufficient privilege
+# 5 - program is not installed
+# 6 - program is not configured
+# 7 - program is not running
+#
+
+# Source function library.
+. /etc/init.d/functions
+
+QLICDIR=/opt/flex-grid
+PATH=$PATH:/cm/shared/apps/flexlm/11.13/bin:/opt/flex-grid/site:/opt/flex-grid/scripts
+
+. /etc/profile.d/modules.sh
+module load shared
+module load sge/univa
+module load gcc
+
+CDLMD_LICENSE_FILE=1999@proteusmaster
+
+prog="qlicserver"
+config="qlicserver.config"
+pidfile=/var/run/qlicserver.pid
+
+# Check that we are root ... so non-root users stop here
+test $EUID = 0  ||  exit 4
+
+RETVAL=0
+
+EXTRAOPTIONS="-d delay=40 ppid=1 output=/var/log/qlicserver"
+
+start(){
+	test -x $QLICDIR/site/$prog  || exit 5
+	test -f $QLICDIR/site/$config || exit 6
+
+	echo -n $"Starting $prog: "
+	/opt/flex-grid/site/qlicserver $EXTRAOPTIONS
+	RETVAL=$?
+	echo "RETVAL=$RETVAL"
+	if test $RETVAL = 0 ; then
+        QLICSERVER_PID=$( ps -ef | egrep "/opt/flex-grid/site/qlicserver" | grep -v grep | awk '{print $2}' )
+        echo $QLICSERVER_PID > $pidfile
+	fi
+	return $RETVAL
+}
+
+stop(){
+	echo -n $"Stopping ${prog}: "
+	/opt/flex-grid/site/qlicserver -k
+	RETVAL=$?
+	echo
+	rm -f $pidfile
+	return $RETVAL
+}
+
+restart(){
+	test -f ${QLICDIR}/site/${config} || exit 6
+	stop
+	start
+}
+
+condrestart(){
+	[ -e /var/lock/subsys/${prog} ] && restart
+	return 0
+}
+
+# See how we were called.
+case "$1" in
+    start)
+	start
+	;;
+    stop)
+	stop
+	;;
+    restart)
+	restart
+	;;
+    status)
+    status -p $pidfile $prog ; RETVAL=$? 
+    ;;
+    condrestart|try-restart)
+	condrestart
+	;;
+    *)
+	echo "Usage: $0 {start|stop|status|restart|condrestart|try-restart}"
+	RETVAL=3
+esac
+
+exit $RETVAL
+
